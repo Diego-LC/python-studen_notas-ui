@@ -5,10 +5,10 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 
-def send_mail(to_mail, from_mail, remitente, self,filename,subject,text):
+def send_mail(to_mail, from_mail, remitente, filename, subject, text):
 
 # Iniciamos los parámetros del scrip
-    destinatarios = [to_mail, 'jorge.diaz@ufrontera.cl']
+    destinatarios = [to_mail, 'a.avalos02@ufrontera.cl']
     cuerpo = text
     ruta_adjunto = filename
     nombre_adjunto = filename
@@ -20,38 +20,38 @@ def send_mail(to_mail, from_mail, remitente, self,filename,subject,text):
     mensaje['Subject'] = subject
     # Agregamos el cuerpo del mensaje como objeto MIME de tipo texto
     mensaje.attach(MIMEText(cuerpo, 'plain'))
-    i
+    
 
-    f (os.path.isfile(filename)):
-    # Creamos un objeto MIME base
-    adjunto_MIME = MIMEBase('application', 'octet-stream')
-    # Abrimos el archivo que vamos a adjuntar
-    archivo_adjunto = open(ruta_adjunto, 'rb')
-    # Y le cargamos el archivo adjunto
-    adjunto_MIME.set_payload((archivo_adjunto).read())
-    # Codificamos el objeto en BASE64
-    encoders.encode_base64(adjunto_MIME)
-    # Agregamos una cabecera al objeto
-    adjunto_MIME.add_header('Content-Disposition', "attachment; filename= %s" % nombre_adjunto)
-    # Y finalmente lo agregamos al mensaje
-    mensaje.attach(adjunto_MIME)
-    # Creamos la conexión con el servidor
+    if (os.path.isfile(filename)):
+        # Creamos un objeto MIME base
+        adjunto_MIME = MIMEBase('application', 'octet-stream')
+        # Abrimos el archivo que vamos a adjuntar
+        archivo_adjunto = open(ruta_adjunto, 'rb')
+        # Y le cargamos el archivo adjunto
+        adjunto_MIME.set_payload((archivo_adjunto).read())
+        # Codificamos el objeto en BASE64
+        encoders.encode_base64(adjunto_MIME)
+        # Agregamos una cabecera al objeto
+        adjunto_MIME.add_header('Content-Disposition', "attachment; filename= %s" % nombre_adjunto)
+        # Y finalmente lo agregamos al mensaje
+        mensaje.attach(adjunto_MIME)
+        # Creamos la conexión con el servidor
     try:
-    aux=str('Poner server google Server_smtp'))
-    sesion_smtp = smtplib.SMTP(aux)
-    # Ciframos la conexión
-    sesion_smtp.starttls()
-    # Iniciamos sesión en el servidor
-    aux=str(' Poner contraseña de correo gmail HABILITADO para envio')
-    sesion_smtp.login(from_mail,aux)
-    # Convertimos el objeto mensaje a texto
-    texto = mensaje.as_string()
-    # Enviamos el mensaje
-    sesion_smtp.sendmail(remitente, destinatarios, texto)
-    # Cerramos la conexión
-    sesion_smtp.quit()
-    print ("Envio email: "+to_mail)
-    return(True)
-except:
-print ("NO Envio email (Utiles): " +to_mail)
-return(False)
+        aux=str('Poner server google Server_smtp')
+        sesion_smtp = smtplib.SMTP(aux)
+        # Ciframos la conexión
+        sesion_smtp.starttls()
+        # Iniciamos sesión en el servidor
+        aux=str(' Poner contraseña de correo gmail HABILITADO para envio')
+        sesion_smtp.login(from_mail,aux)
+        # Convertimos el objeto mensaje a texto
+        texto = mensaje.as_string()
+        # Enviamos el mensaje
+        sesion_smtp.sendmail(remitente, destinatarios, texto)
+        # Cerramos la conexión
+        sesion_smtp.quit()
+        print ("Envio email: "+to_mail)
+        return(True)
+    except:
+        print ("NO Envio email (Utiles): " +to_mail)
+        return(False)
