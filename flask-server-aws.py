@@ -12,7 +12,7 @@ users = db['users'] #seleccion de la coleccion
 #user = users.insert_one({'usuario':'jorge','pass':'qwert'})
 user = users.find_one({'usuario':'jorge','pass':'qwert'})
 query = {'usuario':'jorge','pass':'qwert'}
-newvalues = {"$set": {'nombres':'Jorge Alessandri','matricula':'2055544422','correo':'d.labarin01@ufromail.cl'}}
+newvalues = {"$set": {'nombres':'Jorge Alessandri','matricula':'2055544422','correo':'d.labarin01@ufromail.cl','tipo':'estudiante'}}
 users.update_one(query,newvalues)
 print(users.find_one(sort=[('_id',-1)]))  #verificar el último registro de la coleccion
 for user in users.find():
