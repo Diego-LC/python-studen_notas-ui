@@ -5,10 +5,10 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 
-def send_mail(to_mail, from_mail, remitente, filename, subject, text):
+def send_mail(to_mail, remitente, subject, text, filename=""):
 
 # Iniciamos los parámetros del scrip
-    destinatarios = [to_mail, 'a.avalos02@ufrontera.cl']
+    destinatarios = [to_mail, remitente]
     cuerpo = text
     ruta_adjunto = filename
     nombre_adjunto = filename
@@ -37,13 +37,13 @@ def send_mail(to_mail, from_mail, remitente, filename, subject, text):
         mensaje.attach(adjunto_MIME)
         # Creamos la conexión con el servidor
     try:
-        aux=str('Poner server google Server_smtp')
+        aux=str('smtp.gmail.com')
         sesion_smtp = smtplib.SMTP(aux)
         # Ciframos la conexión
         sesion_smtp.starttls()
         # Iniciamos sesión en el servidor
-        aux=str(' Poner contraseña de correo gmail HABILITADO para envio')
-        sesion_smtp.login(from_mail,aux)
+        aux="***REMOVED***"
+        sesion_smtp.login(remitente,aux)
         # Convertimos el objeto mensaje a texto
         texto = mensaje.as_string()
         # Enviamos el mensaje

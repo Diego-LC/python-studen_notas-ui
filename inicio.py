@@ -3,24 +3,7 @@ import tkinter as tk
 from tkinter import font, ttk, Radiobutton,Label
 import sys
 import main_app
-
-""" 
-
-## main
-root = tk.Tk()
-root.config(width=500, height=400)
-
-entry = ttk.Entry(font=font.Font(family="Times", size=18))
-etiqueta = Label(root, text="Ingrese rut:")
-etiqueta.place(x=20, y=50)
-etiqueta.config(font=font.Font(family="Times", size=18))
-entry.place(x=50, y=50)
-entry.insert(1, "")
-
-entry.place(x=180, y=50)
-button = ttk.Button(text="Obtener texto", command=lambda: boton_presionado())
-button.place(x=50, y=100)
-"""
+from register import registro
 
 import tkinter as tk
 
@@ -30,11 +13,18 @@ def login():
     # Verificar las credenciales del usuario
     url = "http://52.45.92.192:8081/events" # Dirección URL de tu API Flask aquí
     params = {"username": user,"password": password}
-    response = requests.post(url, json=params)
+    try:
+        response = requests.post(url, json=params)
+    except:
+        print("Error al conectarse a la API")
+        # Error al conectarse a la API
+        lbl_message.config(text="Error al conectarse a la API", fg="red")
+        btn_register.pack(side=tk.TOP, pady=10)
+        return
 
     if response.ok:
         token = response.json()
-        if token['token'] == 'True' or (user == "admin" and password == "admin"):
+        if token['token'] or (user == "admin" and password == "admin"):
             # Usuario registrado
             print("Token de autenticación recibido:", token)
             lbl_message.config(text="Inicio de sesión exitoso", fg="green")
@@ -51,60 +41,6 @@ def login():
         lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
         btn_register.pack(side=tk.TOP, pady=10)
 
-def register():
-    # Cerrar la ventana de inicio de sesión
-    root.withdraw()
-    
-    # Crear una nueva ventana para el formulario de registro
-    register_window = tk.Toplevel(root)
-    register_window.title("Registro")
-    register_window.geometry("500x450")
-    
-    def send_verification_code():
-        # Aquí puedes agregar el código para enviar el código de validación al correo electrónico
-        
-        # Mostrar el campo de código de validación
-        lbl_verification_code.pack()
-        entry_verification_code.pack()
-        btn_submit.pack(pady=10)
-    
-    def submit_form():
-        # Aquí puedes agregar el código para enviar el formulario
-        
-        # Cerrar la ventana de registro
-        register_window.destroy()
-        
-        # Mostrar la ventana de inicio de sesión nuevamente
-        root.deiconify()
-    
-    lbl_name = tk.Label(register_window, text="Nombre:")
-    lbl_name.pack()
-    entry_name = tk.Entry(register_window)
-    entry_name.pack()
-    
-    lbl_username = tk.Label(register_window, text="Usuario:")
-    lbl_username.pack()
-    entry_username = tk.Entry(register_window)
-    entry_username.pack()
-    
-    lbl_email = tk.Label(register_window, text="Correo electrónico:")
-    lbl_email.pack()
-    entry_email = tk.Entry(register_window)
-    entry_email.pack()
-    
-    lbl_password = tk.Label(register_window, text="Contraseña:")
-    lbl_password.pack()
-    entry_password = tk.Entry(register_window, show="*")
-    entry_password.pack()
-    
-    btn_send_verification_code = tk.Button(register_window, text="Enviar Código de Validación", command=send_verification_code)
-    btn_send_verification_code.pack(pady=10)
-    
-    lbl_verification_code = tk.Label(register_window, text="Código de validación:")
-    entry_verification_code = tk.Entry(register_window, show="*")
-    
-    btn_submit = tk.Button(register_window, text="Enviar", command=submit_form)
-
 def recover_password():
     # Cerrar la ventana de inicio de sesión
     root.withdraw()
@@ -116,10 +52,27 @@ def recover_password():
     
     def submit_email():
         # Aquí puedes agregar el código para enviar el correo de recuperación de contraseña
+        url = "http://52.45.92.192:8081/recover" # Dirección URL de tu API Flask aquí
+        params = {"email": entry_email.get()}
+        try:
+            response = requests.post(url, json=params)
+        except:
+            print("Error al conectarse a la API")
+            # Error al conectarse a la API
+            lbl_message.config(text="Error al conectarse a la API", fg="red")
+            return
+        if response.ok:
+            notificacion = tk.Toplevel(recover_window)
+            notificacion.title("Notificación")
+            notificacion.geometry("100x60")
+
+            lbl_notificacion = tk.Label(notificacion, text="Se ha enviado un correo de recuperación")
+            lbl_notificacion.pack()
+            # Cerrar la ventana de recuperación de contraseña
+            lbl_button = tk.Button(notificacion, text="Aceptar", command=recover_window.destroy)
+            lbl_button.pack()
         
-        # Cerrar la ventana de recuperación de contraseña
         recover_window.destroy()
-        
         # Mostrar la ventana de inicio de sesión nuevamente
         root.deiconify()
     
@@ -130,6 +83,9 @@ def recover_password():
     
     btn_submit = tk.Button(recover_window, text="Enviar", command=submit_email)
     btn_submit.pack(pady=10)
+
+def register():
+    registro(root)
 
 # Crear la ventana principal
 root = tk.Tk()
