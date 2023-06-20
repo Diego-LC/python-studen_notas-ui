@@ -20,7 +20,7 @@ def send_mail(to_mail, remitente, subject, text, filename=""):
     mensaje['Subject'] = subject
     # Agregamos el cuerpo del mensaje como objeto MIME de tipo texto
     mensaje.attach(MIMEText(cuerpo, 'plain'))
-    
+
 
     if (os.path.isfile(filename)):
         # Creamos un objeto MIME base
@@ -42,7 +42,7 @@ def send_mail(to_mail, remitente, subject, text, filename=""):
         # Ciframos la conexión
         sesion_smtp.starttls()
         # Iniciamos sesión en el servidor
-        aux="***REMOVED***"
+        aux="contrasena1234"
         sesion_smtp.login(remitente,aux)
         # Convertimos el objeto mensaje a texto
         texto = mensaje.as_string()
