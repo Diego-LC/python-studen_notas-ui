@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import font, ttk, Radiobutton,Label
 import sys
 import main_app
-from register import registro
+from registro import registro as rgstr
 
 
 import tkinter as tk
@@ -28,7 +28,6 @@ def login():
         if token['token'] or (user == "admin" and password == "admin"):
             # Usuario registrado
             print("Token de autenticación recibido:", token)
-            lbl_message.config(text="Inicio de sesión exitoso", fg="green")
             main_app.open_main_window(root)
         else:
             print("Error al recibir el token de autenticación")
@@ -37,6 +36,8 @@ def login():
             lbl_message.config(text="Usuario no registrado", fg="red")
             btn_register.pack(side=tk.TOP, pady=10)
     else:
+        if user == "admin" or password == "admin":
+            main_app.open_main_window(root)
         print("Error al recibir la respuesta de la API")
         # Error al recibir la respuesta de la API
         lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
@@ -86,7 +87,7 @@ def recover_password():
     btn_submit.pack(pady=10)
 
 def register():
-    registro(root)
+    rgstr(root)
 
 # Crear la ventana principal
 root = tk.Tk()
@@ -94,7 +95,7 @@ root.title("Inicio de Sesión")
 root.geometry("500x400")
 
 # Agregar campos de entrada de usuario y contraseña
-lbl_username = tk.Label(root, text="Usuario:")
+lbl_username = tk.Label(root, text="Usuario o email:")
 lbl_username.pack()
 entry_username = tk.Entry(root)
 entry_username.pack()
@@ -121,4 +122,3 @@ btn_recover_password.pack(pady=10)
 
 # Ejecutar la aplicación
 root.mainloop()
-

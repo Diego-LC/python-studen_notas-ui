@@ -5,11 +5,10 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 
-def send_mail(to_mail, remitente, subject, text, filename=""):
+def send_mail(to_mail, remitente, asunto, cuerpo, filename=""):
 
 # Iniciamos los parámetros del scrip
     destinatarios = [to_mail, remitente]
-    cuerpo = text
     ruta_adjunto = filename
     nombre_adjunto = filename
     # Creamos el objeto mensaje
@@ -17,7 +16,7 @@ def send_mail(to_mail, remitente, subject, text, filename=""):
     # Establecemos los atributos del mensaje
     mensaje['From'] = remitente
     mensaje['To'] = ", ".join(destinatarios)
-    mensaje['Subject'] = subject
+    mensaje['Subject'] = asunto
     # Agregamos el cuerpo del mensaje como objeto MIME de tipo texto
     mensaje.attach(MIMEText(cuerpo, 'plain'))
 
@@ -37,13 +36,12 @@ def send_mail(to_mail, remitente, subject, text, filename=""):
         mensaje.attach(adjunto_MIME)
         # Creamos la conexión con el servidor
     try:
-        aux=str('smtp.gmail.com')
-        sesion_smtp = smtplib.SMTP(aux)
+        sesion_smtp = smtplib.SMTP('smtp.gmail.com', 587)
         # Ciframos la conexión
         sesion_smtp.starttls()
         # Iniciamos sesión en el servidor
         aux="contrasena1234"
-        sesion_smtp.login(remitente,aux)
+        sesion_smtp.login(remitente, aux)
         # Convertimos el objeto mensaje a texto
         texto = mensaje.as_string()
         # Enviamos el mensaje

@@ -1,25 +1,26 @@
 from flask import Flask, jsonify, request
 from pymongo import MongoClient
 from send_email import send_mail
-# por defecto para crear una instancia de aplicación
-def create_app():
+import random
+import string
+
+verificacion_val = ''
+def create_app(): # por defecto para crear una instancia de aplicación
     app = Flask(__name__)
     return app
 app = create_app()
 client = MongoClient('localhost',27017) #coneccion a la base de datos
 db = client['flask_db'] #seleccion de la base de datos
 users = db['users'] #seleccion de la coleccion
-#user = users.insert_one({'usuario':'jorge','pass':'qwert'})
-user = users.find_one({'usuario':'jorge','pass':'qwert'})
-query = {'usuario':'jorge','pass':'qwert'}
-newvalues = {"$set": {'nombres':'Jorge Alessandri','matricula':'2055544422','correo':'d.labarin01@ufromail.cl','tipo':'estudiante'}}
-users.update_one(query,newvalues)
-print(users.find_one(sort=[('_id',-1)]))  #verificar el último registro de la coleccion
-for user in users.find():
-    print(user)
 
-# metodo de respuesta GET para concoer el estado del servicio, devuelve un json
-# para llamarlo poner SU_IP:8081/status
+ids = users.find_one(sort=[('_id',-1)]) #verifica el primer registro de la coleccion
+#print(users.find_one()) #verifica el último registro
+#print(ids)
+i=1
+for user in users.find():
+    print(f'user {i}: ', user)
+    i+=1
+
 @app.route("/status")
 def status():
     return {
@@ -40,7 +41,7 @@ def create_event():
         userdb = users.find_one({'usuario':user,'pass':password})['usuario']
         passdb = users.find_one({'usuario':user,'pass':password})['pass']
         if user == userdb and password == passdb: #verificamos que el usuario y contraseña coincidan
-            response = {'token': True} 
+            response = {'token': True}
 
     return jsonify(response)
 
@@ -49,11 +50,57 @@ def recover():
     entrada = request.json
     print('json: ', entrada)
     correo = entrada['email']
-    print('usersdb: ', users.find_one({'correo':user}))
-    if users.find_one({'correo':user}):
-        correo_registrado = users.find_one({'correo':user})['correo']
+    print('usersdb: ', users.find_one({'correo':correo}))
+    if users.find_one({'correo':correo}):
+        userbd = users.find_one({'correo':correo})
+        correo_registrado = users.find_one({'correo':correo})['correo']
         if correo == correo_registrado:
-            send_mail(correo_registrado, 'dlc.ufro@gmail.com', 'Recuperar contraseña', 'Tu contraseña es: '+users.find_one({'correo':user})['pass'])
+            envio = send_mail(correo_registrado, 'dlc.ufro@gmail.com', 'Recuperar contraseña', 'Tu contraseña es: '+ userbd['pass'])
+            if envio:
+                print('correo enviado')
+            else:
+                print('correo no enviado')
+
+    return jsonify({'ok':''})
+
+@app.route("/email_verification", methods=(['POST']))
+def email_verification():
+    respuesta = {'status': False}
+    entrada = request.json
+    print('json: ', entrada)
+    correo = entrada['email']
+    print('usersdb: ', users.find_one({'correo':correo}))
+    if not users.find_one({'correo':correo}):
+        respuesta = {'status': True}
+        ## Genera rápidamente letras y números aleatorios
+        code_str = string.ascii_letters + string.digits
+        ## Imprime 4 letras o números aleatorios
+        global verificacion_val
+        verificacion_val = ''.join(random.sample(code_str,6))
+        envio = send_mail(correo, 'dlc.ufro@gmail.com', 'Código de verificación de email', 'Tu codigo de verificación es: '+ verificacion_val)
+        if envio:
+            print('correo enviado')
+        else:
+            print('correo no enviado')
+    return jsonify(respuesta)
+
+@app.route("/register", methods=(['POST']))
+def register():
+    respuesta = {'status': False}
+    entrada = request.json
+    print('json: ', entrada)
+    nombre = entrada['name']
+    user = entrada['username']
+    password = entrada['password']
+    correo = entrada['email']
+    codigo = entrada['code']
+    matricula = entrada['matricula']
+    tipo = entrada['tipo']
+    if codigo == verificacion_val:
+        respuesta = {'status': True}
+        users.insert_one({'usuario':user,'pass':password,'correo':correo,'matricula':matricula, 'nombres':nombre, 'tipo':tipo})
+    
+    return jsonify(respuesta)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8081, debug=True) #levanta el servicio REST API en puerto 8081
