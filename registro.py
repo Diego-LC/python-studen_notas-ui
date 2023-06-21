@@ -80,11 +80,11 @@ def registro(root):
     
     lbl_select = tk.Label(register_window, text="Selecciona tu rol:")
     lbl_select.pack()
-    var = tk.IntVar()
-    var.set(1)
-    rbtn_student = tk.Radiobutton(register_window, text="Estudiante", variable=var, value=1)
+    var = tk.StringVar()
+    var.set("Estudiante")
+    rbtn_student = tk.Radiobutton(register_window, text="Estudiante", variable=var, value="Estudiante")
     rbtn_student.pack()
-    rbtn_teacher = tk.Radiobutton(register_window, text="Profesor", variable=var, value=2)
+    rbtn_teacher = tk.Radiobutton(register_window, text="Profesor", variable=var, value="Profesor")
     rbtn_teacher.pack()
 
     lbl_name = tk.Label(register_window, text="Nombres:")

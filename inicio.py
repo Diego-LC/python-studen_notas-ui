@@ -1,18 +1,15 @@
 import requests
 import tkinter as tk
-from tkinter import font, ttk, Radiobutton,Label
-import sys
 import main_app
 from registro import registro as rgstr
+import asyncio
 
-
-import tkinter as tk
-
+api = "http://52.45.92.192:8081/"
 def login():
     user = entry_username.get()
     password = entry_password.get()
     # Verificar las credenciales del usuario
-    url = "http://52.45.92.192:8081/events" # Dirección URL de tu API Flask aquí
+    url = api + "login" # Dirección URL de tu API Flask aquí
     params = {"username": user,"password": password}
     try:
         response = requests.post(url, json=params)
@@ -20,28 +17,28 @@ def login():
         print("Error al conectarse a la API")
         # Error al conectarse a la API
         lbl_message.config(text="Error al conectarse a la API", fg="red")
-        btn_register.pack(side=tk.TOP, pady=10)
+        if user == "admin" or password == "admin":
+            main_app.main_profesor(root)
         return
 
     if response.ok:
-        token = response.json()
-        if token['token'] or (user == "admin" and password == "admin"):
+        respuesta = response.json()
+        if respuesta['token'] or (user == "admin" and password == "admin"):
             # Usuario registrado
-            print("Token de autenticación recibido:", token)
-            main_app.open_main_window(root)
+            if respuesta['tipo'] == 'Estudiante':
+                main_app.main_estudiante(root)
+            elif respuesta['tipo'] == 'Profesor':
+                main_app.main_profesor(root)
+            print("Token de autenticación recibido:", respuesta)
         else:
             print("Error al recibir el token de autenticación")
-            print(token)
+            print(respuesta)
             # Usuario no registrado
             lbl_message.config(text="Usuario no registrado", fg="red")
-            btn_register.pack(side=tk.TOP, pady=10)
-    else:
-        if user == "admin" or password == "admin":
-            main_app.open_main_window(root)
-        print("Error al recibir la respuesta de la API")
-        # Error al recibir la respuesta de la API
-        lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
-        btn_register.pack(side=tk.TOP, pady=10)
+    print("Error al recibir la respuesta de la API")
+    lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
+    if user == "admin" or password == "admin":
+        main_app.main_profesor(root)
 
 def recover_password():
     # Cerrar la ventana de inicio de sesión
@@ -54,7 +51,7 @@ def recover_password():
     
     def submit_email():
         # Aquí puedes agregar el código para enviar el correo de recuperación de contraseña
-        url = "http://52.45.92.192:8081/recover" # Dirección URL de tu API Flask aquí
+        url = api + "recover" # Dirección URL de tu API Flask aquí
         params = {"email": entry_email.get()}
         try:
             response = requests.post(url, json=params)
@@ -115,6 +112,7 @@ lbl_message.pack()
 
 # Botón de registro (inicialmente oculto)
 btn_register = tk.Button(root, text="Registrarse", command=register)
+btn_register.pack(side=tk.TOP, pady=10)
 
 # Botón de recuperar contraseña
 btn_recover_password = tk.Button(root, text="Recuperar contraseña", command=recover_password)

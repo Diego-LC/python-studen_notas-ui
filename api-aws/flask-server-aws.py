@@ -28,21 +28,24 @@ def status():
         "texto": "OK"
     }
 # API REST que recibe un JSON lo imprime por consola y responde un json
-@app.route("/events", methods=(['POST']))
+@app.route("/login", methods=(['POST']))
 def create_event():
-    response = {'token': False}
+    response = {'token': False, 'tipo': ''}
     entrada = request.json
     print('json: ', entrada) #verficamos que el json se recibe correctamente
     user = entrada['username']
+    valor = 'usuario'
+    if '@' in user and '.c' in user:
+        valor = 'correo'
     password = entrada['password']
-    print('usersdb: ', users.find_one({'usuario':user,'pass':password})) #verificamos si el usuario y contraseña esten en la base de datos
+    userdb = users.find_one({valor: user,'pass':password})
+    print('usersdb: ', userdb) #verificamos si el usuario y contraseña esten en la base de datos
 
-    if users.find_one({'usuario':user,'pass':password}): #preguntamos si la base de datos devuelve un diccionario
-        userdb = users.find_one({'usuario':user,'pass':password})['usuario']
-        passdb = users.find_one({'usuario':user,'pass':password})['pass']
-        if user == userdb and password == passdb: #verificamos que el usuario y contraseña coincidan
-            response = {'token': True}
-
+    if userdb: #preguntamos si la base de datos devuelve un diccionario
+        udb = userdb[valor]
+        passdb = userdb['pass']
+        if user == udb and password == passdb: #verificamos que el usuario y contraseña coincidan
+            response = {'token': True, 'tipo': userdb['tipo']}
     return jsonify(response)
 
 @app.route("/recover", methods=(['POST']))
