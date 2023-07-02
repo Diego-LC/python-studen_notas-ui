@@ -7,7 +7,7 @@ print(''.join(random.sample(code_str,6)))
 p = 'asdfsdsd@gmail.com'
 print('@' in p or '.c' in p) """
 
-#ventana estudiante enfoque POO
+#ventana estudiante usando POO
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk

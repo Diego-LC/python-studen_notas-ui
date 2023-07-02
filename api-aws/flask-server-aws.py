@@ -30,7 +30,7 @@ def status():
 # API REST que recibe un JSON lo imprime por consola y responde un json
 @app.route("/login", methods=(['POST']))
 def create_event():
-    response = {'token': False, 'tipo': ''}
+    respuesta = {'token': False, 'tipo': ''}
     entrada = request.json
     print('json: ', entrada) #verficamos que el json se recibe correctamente
     user = entrada['username']
@@ -45,8 +45,8 @@ def create_event():
         udb = userdb[valor]
         passdb = userdb['pass']
         if user == udb and password == passdb: #verificamos que el usuario y contraseña coincidan
-            response = {'token': True, 'tipo': userdb['tipo']}
-    return jsonify(response)
+            respuesta = {'token': True, 'tipo': userdb['tipo']}
+    return jsonify(respuesta)
 
 @app.route("/recover", methods=(['POST']))
 def recover():

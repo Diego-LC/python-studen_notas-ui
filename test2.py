@@ -6,22 +6,21 @@ asignaturas = []
 def agregar_asignatura():
     titulo = entry_titulo.get()
     if titulo:
-        asignatura = {"titulo": titulo, "notas_practicas": [], "notas_teoricas": []}
+        asignatura = {"asignatura": titulo, "notas_practicas": [], "notas_teoricas": []}
         asignaturas.append(asignatura)
         actualizar_listbox_asignaturas()
     else:
-        messagebox.showerror("Error", "Debe ingresar un título.")
+        messagebox.showerror("Error", "Debe ingresar una asignatura.")
 
 def ver_asignatura():
     seleccion = listbox_asignaturas.curselection()
     if seleccion:
         index = seleccion[0]
-        asignatura = asignaturas[index]
-        ventana_ver_asignatura(asignatura)
+        ventana_ver_asignatura(asignaturas[index])
 
 def ventana_ver_asignatura(asignatura):
     ventana = tk.Toplevel()
-    ventana.title(asignatura["titulo"])
+    ventana.title(asignatura["asignatura"])
 
     def agregar_nota(tipo):
         ponderacion = float(entry_ponderacion.get())
@@ -117,8 +116,10 @@ def ventana_ver_asignatura(asignatura):
             listbox_notas_teoricas.insert(tk.END, f"Teórica - Ponderación: {nota['ponderacion']}, Valor: {nota['valor']}")
 
 ventana_principal = tk.Tk()
+ventana_principal.title("Asignaturas")
+ventana_principal.geometry("300x400")
 
-label_titulo = tk.Label(ventana_principal, text="Título:")
+label_titulo = tk.Label(ventana_principal, text="Agregar asignatura:")
 label_titulo.pack()
 
 entry_titulo = tk.Entry(ventana_principal)
@@ -127,15 +128,24 @@ entry_titulo.pack()
 btn_agregar = tk.Button(ventana_principal, text="Agregar", command=agregar_asignatura)
 btn_agregar.pack(pady=5)
 
+label_lista = tk.Label(ventana_principal, text="Lista de asignaturas:")
+label_lista.pack(pady=(20,5))
+
 listbox_asignaturas = tk.Listbox(ventana_principal)
 listbox_asignaturas.pack()
 
+
 btn_ver_asignatura = tk.Button(ventana_principal, text="Ver Asignatura", command=ver_asignatura)
-btn_ver_asignatura.pack(pady=5)
+def seleccionar_asignatura(event):
+    titulo = listbox_asignaturas.get(listbox_asignaturas.curselection())
+    if titulo:
+        btn_ver_asignatura.pack(pady=5) # Mostrar el botón 'ver asignatura'
+
+listbox_asignaturas.bind("<<ListboxSelect>>", seleccionar_asignatura)
 
 def actualizar_listbox_asignaturas():
     listbox_asignaturas.delete(0, tk.END)
     for asignatura in asignaturas:
-        listbox_asignaturas.insert(tk.END, asignatura["titulo"])
+        listbox_asignaturas.insert(tk.END, asignatura["asignatura"])
 
 ventana_principal.mainloop()
