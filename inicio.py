@@ -18,27 +18,25 @@ def login():
         # Error al conectarse a la API
         lbl_message.config(text="Error al conectarse a la API", fg="red")
         if user == "admin" or password == "admin":
-            main_app.main_profesor(root)
+            main_app.main_estudiante(root, [])
         return
 
     if response.ok:
         respuesta = response.json()
-        if respuesta['token'] or (user == "admin" and password == "admin"):
+        if respuesta['token']:
             # Usuario registrado
-            if respuesta['tipo'] == 'Estudiante':
-                main_app.main_estudiante(root)
-            elif respuesta['tipo'] == 'Profesor':
-                main_app.main_profesor(root)
-            print("Token de autenticación recibido:", respuesta)
+            print("Token de autenticación recibido:", respuesta['token'])
+            main_app.main_estudiante(root, respuesta['notas'])
         else:
             print("Error al recibir el token de autenticación")
             print(respuesta)
             # Usuario no registrado
             lbl_message.config(text="Usuario no registrado", fg="red")
-    print("Error al recibir la respuesta de la API")
-    lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
+    else:
+        print("Error al recibir la respuesta de la API")
+        lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
     if user == "admin" or password == "admin":
-        main_app.main_profesor(root)
+        main_app.main_estudiante(root, [])
 
 def recover_password():
     # Cerrar la ventana de inicio de sesión

@@ -45,7 +45,7 @@ def create_event():
         udb = userdb[valor]
         passdb = userdb['pass']
         if user == udb and password == passdb: #verificamos que el usuario y contraseña coincidan
-            respuesta = {'token': True, 'tipo': userdb['tipo']}
+            respuesta = {'token': True, 'tipo': userdb['notas']}
     return jsonify(respuesta)
 
 @app.route("/recover", methods=(['POST']))
