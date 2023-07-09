@@ -10,10 +10,11 @@ def login():
     # Verificar las credenciales del usuario
     url = api + "login" # Dirección URL de tu API Flask aquí
     params = {"username": user,"password": password}
-    datos_admin={'userid': 1, 'notas': [{'ponderaciones':{'tipo_evaluacion':{'Eval. Teórica':1.0}, 
-                                                                    'tipo_nota':{'Prueba':0.6, 'Control':0.4}}},
-                                            {'notas':[["Control", "5.5", "Eval. Teórica"],
-                                                        ["Prueba", "6.0", "Eval. Teórica"]]}]}
+    datos_admin={'userid': 1, 'notas': [{'ponderaciones':{'tipo_nota':{'Prueba':0.6, 'Control':0.4, 'Tarea':1.0},
+                                                        'tipo_evaluacion':{'Eval. Teórica':0.7 , 'Eval. Práctica':0.3}}},
+                                        {'notas':[["Control", "5.5", "Eval. Teórica"],
+                                                    ["Prueba", "6.0", "Eval. Teórica"],
+                                                    ['Tarea', '6.0', 'Eval. Práctica']]}]}
     try:
         response = requests.post(url, json=params)
     except:

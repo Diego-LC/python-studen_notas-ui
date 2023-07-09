@@ -87,7 +87,6 @@ class VentanaNotas:
             lbl_promedio_evaluaciones.grid(row=2, column=0, sticky="wn")
             lbl_promedio_total = tk.Label(self.ventana, text=f"Promedio Total: {self.promedio_total}")
             lbl_promedio_total.grid(row=3, column=0, sticky="ws")
-            print(self.promedio_evaluaciones)
 
     
     def editar_fila(self, event):
@@ -254,8 +253,11 @@ class VentanaNotas:
         messagebox.showinfo("Promedios", f"Promedios por Tipo de Evaluación:\n\n{promedios_tipo_evaluacion}\n\nPromedios por Tipo de Nota:\n\n{promedios_nota}\n\nPromedio Total: {promedio_total:.2f}")
 
     def mostrar_opciones(self):
+        self.ventana.withdraw()
         ventana_opciones = tk.Toplevel(self.ventana)
         ventana_opciones.title("Opciones")
+        ventana_opciones.geometry("180x230")
+        ventana_opciones.resizable(False, False)
 
         btn_subir_servidor = tk.Button(ventana_opciones, text="Guardar cambios", command=self.subir_servidor)
         btn_subir_servidor.pack(pady=5)
@@ -265,6 +267,9 @@ class VentanaNotas:
 
         btn_enviar_correo = tk.Button(ventana_opciones, text="Enviar por Correo", command=self.enviar_correo)
         btn_enviar_correo.pack(pady=5)
+
+        btn_volver = tk.Button(ventana_opciones, text="Volver", command=lambda: [self.ventana.deiconify(), ventana_opciones.destroy()])
+        btn_volver.pack(pady=5, side=tk.BOTTOM)
 
     def subir_servidor(self):
         datos_json = {'userid': self.usuario, 'notas': self.datos}
@@ -282,30 +287,62 @@ class VentanaNotas:
             messagebox.showerror("Error", "Ha ocurrido un error al subir los datos al servidor.")
 
     def convertir_a_json(self):
-        datos_json = {}
+        datos_json = {'userid': self.usuario, 'notas': {}}
+        datos_json.update(self.datos[0])
+        datos_json['promedios'] = self.promedio_evaluaciones
+        datos_json['promedio_total'] = self.promedio_total
         index = 1
-        if self.datos[1]['notas']:
-            for fila in self.datos[1]['notas']:
-                datos_json['fila' + str(index)] ={
-                    "Tipo Nota": fila[0],
-                    "Nota": fila[1],
-                    "Tipo Evaluación": fila[2]
-                }
+        if self.tabla.get_children():
+            for item_id in self.tabla.get_children():
+                datos_json['notas'][f'fila{index}'] = {'Tipo Nota': self.tabla.item(item_id)["values"][0], 
+                                                        'Nota': self.tabla.item(item_id)["values"][1], 
+                                                        'Ponderación Nota': self.tabla.item(item_id)["values"][2], 
+                                                        'Tipo Evaluación': self.tabla.item(item_id)["values"][3]}
                 index += 1
+        print(datos_json)
         return datos_json
 
     def exportar_excel(self):
         libro_excel = Workbook()
         hoja = libro_excel.active
+        datos = self.convertir_a_json()
+        # Encabezados de las notas
+        encabezados_notas = ['Tipo Nota', 'Nota', 'Ponderación Nota','Tipo Evaluación']
+        hoja.append(encabezados_notas)
 
-        # Encabezados de columna
-        hoja.append(["Tipo de Nota", "Nota", "Ponderación Nota", "Tipo de Evaluación", "Ponderación Evaluación"])
-
-        # Datos de la tabla
-        for item_id in self.tabla.get_children():
-            fila = self.tabla.item(item_id)["values"]
+        # Escribir notas
+        for fila_data in datos['notas'].values():
+            fila = [fila_data['Tipo Nota'], fila_data['Nota'], fila_data['Ponderación Nota'],fila_data['Tipo Evaluación']]
             hoja.append(fila)
-            print(fila)
+
+        # Espacio en blanco entre las notas y las ponderaciones
+        hoja.append([])
+
+        # Encabezados de las ponderaciones
+        encabezados_ponderaciones = ['Tipo Evaluación', 'Ponderación']
+        hoja.append(encabezados_ponderaciones)
+
+        # Escribir ponderaciones
+        for tipo_evaluacion, ponderacion in datos['ponderaciones']['tipo_evaluacion'].items():
+            fila = [tipo_evaluacion, ponderacion]
+            hoja.append(fila)
+
+        # Espacio en blanco entre las ponderaciones y los promedios
+        hoja.append([])
+        hoja.append(['Promedios'])
+
+        # Encabezados y valores de los promedios por tipo de evaluación
+        encabezados_promedios = ['Tipo Evaluación', 'Promedio']
+        hoja.append(encabezados_promedios)
+
+        for tipo_evaluacion, promedio in datos['promedios'].items():
+            fila = [tipo_evaluacion, promedio]
+            hoja.append(fila)
+        hoja.append([])
+
+        # Encabezado y valor del promedio total
+        encabezado_promedio_total = ['Promedio Total', datos['promedio_total']]
+        hoja.append(encabezado_promedio_total)
 
         # Ajustar el ancho de las columnas
         for columna in hoja.columns:
@@ -326,28 +363,23 @@ class VentanaNotas:
                 celda.alignment = Alignment(horizontal="center", vertical="center")
         
         #Se pregunta por la ruta y nombre donde se guardará el archivo
-        hoy = datetime.now()
-        hoy_str = hoy.strftime("%d-%m-%Y %H:%M:%S")
-        ruta_archivo = asksaveasfilename(defaultextension=".xlsx", filetypes=(("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")), initialfile=f"Notas{hoy_str}")
+        hoy = datetime.datetime.now()
+        hoy_str = hoy.strftime("%d-%m-%Y_%H-%M-%S")
+        ruta_archivo = asksaveasfilename(defaultextension=".xlsx", filetypes=(("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")), initialfile=f"Notas_{hoy_str}")
         
         if ruta_archivo:
             libro_excel.save(ruta_archivo)
             messagebox.showinfo("Exportar a Excel", f"Los datos se han exportado correctamente al archivo:\n\n{ruta_archivo}")
 
     def enviar_correo(self):
-        print(self.datos[0])
-        datos_json = {'userid': self.usuario, 'notas': self.convertir_a_json()}
-        datos_json.update(self.datos[0])
-        datos_json['promedios'] = self.promedio_evaluaciones
-        datos_json['promedio_total'] = self.promedio_total
+        datos_json =  self.convertir_a_json()
         api_url = self.api + 'send'
         try:
             response = requests.post(api_url, json=datos_json)
             print(response)
             messagebox.showinfo("Enviar por Correo", response.json()['mensaje'])
         except:
-            print("Ha ocurrido un error al enviar los datos por correo.")
-        print(datos_json)
+            messagebox.showinfo("Enviar por Correo", "Ha ocurrido un error al enviar los datos por correo")
 
 def main_estudiante(ventana_login, datos):
     ventana_login.destroy()

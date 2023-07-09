@@ -8,232 +8,120 @@ p = 'asdfsdsd@gmail.com'
 print('@' in p or '.c' in p) """
 
 #ventana estudiante usando POO
-import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
+from openpyxl import Workbook
+from openpyxl.styles import Alignment
+from openpyxl import utils
 
-class Asignatura:
-    def __init__(self, titulo):
-        self.titulo = titulo
-        self.notas_practicas = []
-        self.notas_teoricas = []
+def crear_exel(datos):
+    libro_excel = Workbook()
+    hoja = libro_excel.active
 
-    def agregar_nota(self, tipo, ponderacion, valor):
-        nota = {"tipo": tipo, "ponderacion": ponderacion, "valor": valor}
-        if tipo == "Práctica":
-            self.notas_practicas.append(nota)
-        elif tipo == "Teórica":
-            self.notas_teoricas.append(nota)
+    # Encabezados de las notas
+    encabezados_notas = ['Tipo Nota', 'Nota', 'Ponderación Nota','Tipo Evaluación']
+    hoja.append(encabezados_notas)
 
-    def calcular_promedio_practicas(self):
-        suma_ponderada = 0
-        suma_ponderaciones = 0
+    # Escribir notas
+    for fila_data in datos['notas'].values():
+        fila = [fila_data['Tipo Nota'], fila_data['Nota'], fila_data['Ponderación Nota'],fila_data['Tipo Evaluación']]
+        hoja.append(fila)
 
-        for nota in self.notas_practicas:
-            suma_ponderada += nota["ponderacion"] * nota["valor"]
-            suma_ponderaciones += nota["ponderacion"]
+    # Espacio en blanco entre las notas y las ponderaciones
+    hoja.append([])
 
-        if suma_ponderaciones > 0:
-            return suma_ponderada / suma_ponderaciones
-        else:
-            return 0
+    # Encabezados de las ponderaciones
+    encabezados_ponderaciones = ['Tipo Evaluación', 'Ponderación']
+    hoja.append(encabezados_ponderaciones)
 
-    def calcular_promedio_teoricas(self):
-        suma_ponderada = 0
-        suma_ponderaciones = 0
+    # Escribir ponderaciones
+    for tipo_evaluacion, ponderacion in datos['ponderaciones']['tipo_evaluacion'].items():
+        fila = [tipo_evaluacion, ponderacion]
+        hoja.append(fila)
 
-        for nota in self.notas_teoricas:
-            suma_ponderada += nota["ponderacion"] * nota["valor"]
-            suma_ponderaciones += nota["ponderacion"]
+    # Espacio en blanco entre las ponderaciones y los promedios
+    hoja.append([])
+    hoja.append(['Promedios'])
 
-        if suma_ponderaciones > 0:
-            return suma_ponderada / suma_ponderaciones
-        else:
-            return 0
+    # Encabezados y valores de los promedios por tipo de evaluación
+    encabezados_promedios = ['Tipo Evaluación', 'Promedio']
+    hoja.append(encabezados_promedios)
 
-    def calcular_promedio_total(self):
-        ponderacion_practicas = sum(nota["ponderacion"] for nota in self.notas_practicas)
-        ponderacion_teoricas = sum(nota["ponderacion"] for nota in self.notas_teoricas)
-        promedio_practicas = self.calcular_promedio_practicas()
-        promedio_teoricas = self.calcular_promedio_teoricas()
+    for tipo_evaluacion, promedio in datos['promedios'].items():
+        fila = [tipo_evaluacion, promedio]
+        hoja.append(fila)
+    hoja.append([])
 
-        return (promedio_practicas * ponderacion_practicas + promedio_teoricas * ponderacion_teoricas) / (ponderacion_practicas + ponderacion_teoricas)
+    # Encabezado y valor del promedio total
+    encabezado_promedio_total = ['Promedio Total', datos['promedio_total']]
+    hoja.append(encabezado_promedio_total)
 
-class VentanaPrincipal(tk.Tk):
-    def __init__(self):
-        super().__init__()
+    # Ajustar el ancho de las columnas
+    for columna in hoja.columns:
+        max_length = 0
+        column = columna[0].column_letter  # Obtiene la letra de la columna (A, B, C, ...)
+        for cell in columna:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        hoja.column_dimensions[column].width = adjusted_width
 
-        self.asignaturas = []
-        self.title("Gestor de Asignaturas")
-        
-        self.frame_asignaturas = tk.Frame(self)
-        self.frame_asignaturas.pack(pady=10)
+    # Centrar el contenido de las celdas
+    for fila in hoja.iter_rows(min_row=2):
+        for celda in fila:
+            celda.alignment = Alignment(horizontal="center", vertical="center")
+    
+    ruta = "notas.xlsx"
+    libro_excel.save(ruta)
+    return ruta
 
-        self.label_asignaturas = tk.Label(self.frame_asignaturas, text="Asignaturas:")
-        self.label_asignaturas.pack()
+datos = {
+    'userid': '64a9f9ea2c54975231b56c04',
+    'notas': {
+        'fila1': {'Tipo Nota': 'Prueba', 'Nota': '4.8', 'Ponderación Nota': '0.4', 'Tipo Evaluación': 'Eval. Teórica'}, 
+        'fila2': {'Tipo Nota': 'Control', 'Nota': '6.5', 'Ponderación Nota': '0.2', 'Tipo Evaluación': 'Eval. Teórica'}, 
+        'fila3': {'Tipo Nota': 'Prueba', 'Nota': '5.7', 'Ponderación Nota': '0.4', 'Tipo Evaluación': 'Eval. Teórica'}, 
+        'fila4': {'Tipo Nota': 'Trabajo', 'Nota': '6.3', 'Ponderación Nota': '1.0', 'Tipo Evaluación': 'Eval. Práctica'}
+        },
+    'ponderaciones': {
+        'tipo_evaluacion': {'Eval. Práctica': '0.4', 'Eval. Teórica': '0.6'},
+        'tipo_nota': {'Control': '0.2', 'Prueba': '0.4', 'Trabajo': '1.0'}
+        },
+    'promedios': {'Eval. Teórica': 5.5, 'Eval. Práctica': 6.3},
+    'promedio_total': 5.82
+}
 
-        self.listbox_asignaturas = tk.Listbox(self.frame_asignaturas)
-        self.listbox_asignaturas.pack()
+ruta = crear_exel(datos)
+print(ruta)
 
-        self.btn_agregar_asignatura = tk.Button(self, text="Agregar Asignatura", command=self.abrir_ventana_agregar_asignatura)
-        self.btn_agregar_asignatura.pack(pady=5)
 
-        self.btn_ver_asignatura = tk.Button(self, text="Ver Asignatura", command=self.ver_asignatura)
-        self.btn_ver_asignatura.pack(pady=5)
+""" # Escribir los datos en el archivo Excel
+    hoja.append(['Tipo Nota', 'Nota', 'Tipo Evaluación'])
 
-    def abrir_ventana_agregar_asignatura(self):
-        ventana_agregar_asignatura = VentanaAgregarAsignatura(self)
-        # self.wait_window(ventana_agregar_asignatura)
-        self.actualizar_listbox_asignaturas()
+    for fila in datos['notas'][1]['notas']:
+        hoja.append(fila)
 
-    def ver_asignatura(self):
-        seleccion = self.listbox_asignaturas.curselection()
-        if seleccion:
-            index = seleccion[0]
-            asignatura = self.asignaturas[index]
-            ventana_ver_asignatura = VentanaVerAsignatura(self, asignatura)
-            self.wait_window(ventana_ver_asignatura)
+    hoja.append([])  # Agregar una fila vacía
+    hoja.append(['Ponderaciones:'])
 
-    def actualizar_listbox_asignaturas(self):
-        self.listbox_asignaturas.delete(0, tk.END)
-        for asignatura in self.asignaturas:
-            self.listbox_asignaturas.insert(tk.END, asignatura.titulo)
+    # Obtener la columna inicial para las ponderaciones
+    columna_inicial = utils.get_column_letter(3)  # Columna 'C'
 
-class VentanaAgregarAsignatura(tk.Toplevel):
-    def __init__(self, ventana_principal):
-        super().__init__(ventana_principal)
-        self.title("Agregar Asignatura")
+    for clave, valor in datos['notas'][0]['ponderaciones'].items():
+        hoja.append([clave])
+        for subclave, subvalor in valor.items():
+            hoja.append([subclave, subvalor])
 
-        self.label_titulo = tk.Label(self, text="Título:")
-        self.label_titulo.pack()
+    hoja.append([])  # Agregar una fila vacía
 
-        self.entry_titulo = tk.Entry(self)
-        self.entry_titulo.pack()
+    # Obtener la columna inicial para los promedios
+    columna_promedios = 3  # Columna siguiente a la última columna utilizada
+    fila_promedios = 7  # Fila siguiente a la última fila utilizada
+    hoja.cell(row=6, column=columna_promedios).value = 'Promedios:'
 
-        self.btn_guardar = tk.Button(self, text="Guardar", command=self.guardar_asignatura)
-        self.btn_guardar.pack(pady=5)
-
-    def guardar_asignatura(self):
-        titulo = self.entry_titulo.get()
-        if titulo:
-            asignatura = Asignatura(titulo)
-            self.master.asignaturas.append(asignatura)
-            self.master.actualizar_listbox_asignaturas()
-            self.destroy()
-        else:
-            messagebox.showerror("Error", "Debe ingresar un título.")
-
-class VentanaVerAsignatura(tk.Toplevel):
-    def __init__(self, ventana_principal, asignatura):
-        super().__init__(ventana_principal)
-        self.title(asignatura.titulo)
-
-        self.label_notas_practicas = tk.Label(self, text="Notas Prácticas:")
-        self.label_notas_practicas.pack()
-
-        self.listbox_notas_practicas = tk.Listbox(self)
-        self.listbox_notas_practicas.pack()
-
-        self.frame_nota_practica = tk.Frame(self)
-        self.frame_nota_practica.pack(pady=5)
-
-        self.label_ponderacion_practica = tk.Label(self.frame_nota_practica, text="Ponderación Práctica:")
-        self.label_ponderacion_practica.pack(side=tk.LEFT)
-
-        self.entry_ponderacion_practica = tk.Entry(self.frame_nota_practica, width=5)
-        self.entry_ponderacion_practica.pack(side=tk.LEFT)
-
-        self.label_valor_practica = tk.Label(self.frame_nota_practica, text="Valor Práctica:")
-        self.label_valor_practica.pack(side=tk.LEFT)
-
-        self.entry_valor_practica = tk.Entry(self.frame_nota_practica, width=5)
-        self.entry_valor_practica.pack(side=tk.LEFT)
-
-        self.btn_agregar_nota_practica = tk.Button(self, text="Agregar Nota Práctica", command=self.agregar_nota_practica)
-        self.btn_agregar_nota_practica.pack(pady=5)
-
-        self.label_notas_teoricas = tk.Label(self, text="Notas Teóricas:")
-        self.label_notas_teoricas.pack()
-
-        self.listbox_notas_teoricas = tk.Listbox(self)
-        self.listbox_notas_teoricas.pack()
-
-        self.frame_nota_teorica = tk.Frame(self)
-        self.frame_nota_teorica.pack(pady=5)
-
-        self.label_ponderacion_teorica = tk.Label(self.frame_nota_teorica, text="Ponderación Teórica:")
-        self.label_ponderacion_teorica.pack(side=tk.LEFT)
-
-        self.entry_ponderacion_teorica = tk.Entry(self.frame_nota_teorica, width=5)
-        self.entry_ponderacion_teorica.pack(side=tk.LEFT)
-
-        self.label_valor_teorica = tk.Label(self.frame_nota_teorica, text="Valor Teórica:")
-        self.label_valor_teorica.pack(side=tk.LEFT)
-
-        self.entry_valor_teorica = tk.Entry(self.frame_nota_teorica, width=5)
-        self.entry_valor_teorica.pack(side=tk.LEFT)
-
-        self.btn_agregar_nota_teorica = tk.Button(self, text="Agregar Nota Teórica", command=self.agregar_nota_teorica)
-        self.btn_agregar_nota_teorica.pack(pady=5)
-
-        self.btn_calcular_promedio_practicas = tk.Button(self, text="Calcular Promedio Prácticas", command=self.calcular_promedio_practicas)
-        self.btn_calcular_promedio_practicas.pack(pady=5)
-
-        self.btn_calcular_promedio_teoricas = tk.Button(self, text="Calcular Promedio Teóricas", command=self.calcular_promedio_teoricas)
-        self.btn_calcular_promedio_teoricas.pack(pady=5)
-
-        self.btn_calcular_promedio_total = tk.Button(self, text="Calcular Promedio Total", command=self.calcular_promedio_total)
-        self.btn_calcular_promedio_total.pack(pady=5)
-
-        self.asignatura = asignatura
-
-        self.actualizar_listbox_notas()
-
-    def agregar_nota_practica(self):
-        ponderacion = float(self.entry_ponderacion_practica.get())
-        valor = float(self.entry_valor_practica.get())
-
-        if ponderacion and valor:
-            self.asignatura.agregar_nota("Práctica", ponderacion, valor)
-            self.actualizar_listbox_notas()
-            self.entry_ponderacion_practica.delete(0, tk.END)
-            self.entry_valor_practica.delete(0, tk.END)
-        else:
-            messagebox.showerror("Error", "Debe ingresar todos los campos.")
-
-    def agregar_nota_teorica(self):
-        ponderacion = float(self.entry_ponderacion_teorica.get())
-        valor = float(self.entry_valor_teorica.get())
-
-        if ponderacion and valor:
-            self.asignatura.agregar_nota("Teórica", ponderacion, valor)
-            self.actualizar_listbox_notas()
-            self.entry_ponderacion_teorica.delete(0, tk.END)
-            self.entry_valor_teorica.delete(0, tk.END)
-        else:
-            messagebox.showerror("Error", "Debe ingresar todos los campos.")
-
-    def calcular_promedio_practicas(self):
-        promedio = self.asignatura.calcular_promedio_practicas()
-        messagebox.showinfo("Promedio Prácticas", f"El promedio de las notas prácticas es: {promedio}")
-
-    def calcular_promedio_teoricas(self):
-        promedio = self.asignatura.calcular_promedio_teoricas()
-        messagebox.showinfo("Promedio Teóricas", f"El promedio de las notas teóricas es: {promedio}")
-
-    def calcular_promedio_total(self):
-        promedio = self.asignatura.calcular_promedio_total()
-        messagebox.showinfo("Promedio Total", f"El promedio total es: {promedio}")
-
-    def actualizar_listbox_notas(self):
-        self.listbox_notas_practicas.delete(0, tk.END)
-        self.listbox_notas_teoricas.delete(0, tk.END)
-
-        for nota in self.asignatura.notas_practicas:
-            self.listbox_notas_practicas.insert(tk.END, f"Práctica - Ponderación: {nota['ponderacion']}, Valor: {nota['valor']}")
-
-        for nota in self.asignatura.notas_teoricas:
-            self.listbox_notas_teoricas.insert(tk.END, f"Teórica - Ponderación: {nota['ponderacion']}, Valor: {nota['valor']}")
-
-ventana_principal = VentanaPrincipal()
-ventana_principal.mainloop()
+    for clave, valor in datos['promedios'].items():
+        hoja.cell(row=fila_promedios, column=columna_promedios).value = clave
+        hoja.cell(row=fila_promedios, column=columna_promedios + 1).value = valor
+        fila_promedios += 1
+ """
