@@ -5,11 +5,11 @@ from tkinter.simpledialog import askstring
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 from flask import jsonify
+import requests
 
 class VentanaNotas:
-    def __init__(self,ventana_login, ventana, datos):
+    def __init__(self, ventana, datos):
         self.usuario = datos['userid']
-        self.ventana_login = ventana_login
         self.ventana = ventana
         self.ventana.title("Tabla de Notas")
         self.tipo_evaluacion = []
@@ -265,10 +265,21 @@ class VentanaNotas:
         btn_enviar_correo.pack(pady=5)
 
     def subir_servidor(self):
-        datos_json = self.convertir_a_json()
+        datos_json = {'userid': self.usuario, 'notas': self.datos}
+        api_url = 'http://52.45.92.192:8081/update'
+        try:
+            response = requests.post(api_url, json=datos_json)
+            print(response)
+        except:
+            messagebox.showerror("Error", "Ha ocurrido un error al subir los datos al servidor.")
+        if response.ok:
+            respuesta = response.json()
+
+            messagebox.showinfo("Subir al Servidor", respuesta['mensaje'])
+        else:
+            messagebox.showerror("Error", "Ha ocurrido un error al subir los datos al servidor.")
+        #
         print(datos_json)
-        # Aquí puedes implementar la lógica para subir los datos al servidor
-        messagebox.showinfo("Subir al Servidor", "Los datos se han subido correctamente al servidor.")
 
     def convertir_a_json(self):
         datos_json = {}
@@ -284,40 +295,42 @@ class VentanaNotas:
         return datos_json
 
     def exportar_excel(self):
-        nombre_archivo = askstring("Guardar como", "Ingrese el nombre del archivo Excel:")
-        if nombre_archivo:
-            ruta_archivo = asksaveasfilename(defaultextension=".xlsx", filetypes=(("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")))
-            if ruta_archivo:
-                libro_excel = Workbook()
-                hoja = libro_excel.active
+        datos_json = self.convertir_a_json()
+        print(datos_json)
+        ruta_archivo = asksaveasfilename(defaultextension=".xlsx", filetypes=(("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")))
+        if ruta_archivo:
+            libro_excel = Workbook()
+            hoja = libro_excel.active
 
-                # Encabezados de columna
-                hoja.append(["Tipo de Nota", "Nota", "Ponderación Nota", "Tipo de Evaluación", "Ponderación Evaluación"])
+            # Encabezados de columna
+            hoja.append(["Tipo de Nota", "Nota", "Ponderación Nota", "Tipo de Evaluación", "Ponderación Evaluación"])
 
-                # Datos de la tabla
-                for fila in self.datos:
-                    hoja.append(fila)
+            # Datos de la tabla
+            for item_id in self.tabla.get_children():
+                fila = self.tabla.item(item_id)["values"]
+                hoja.append(fila)
 
-                # Ajustar el ancho de las columnas
-                for columna in hoja.columns:
-                    max_length = 0
-                    column = columna[0].column_letter  # Obtiene la letra de la columna (A, B, C, ...)
-                    for cell in columna:
-                        try:
-                            if len(str(cell.value)) > max_length:
-                                max_length = len(cell.value)
-                        except:
-                            pass
-                    adjusted_width = (max_length + 2) * 1.2
-                    hoja.column_dimensions[column].width = adjusted_width
 
-                # Centrar el contenido de las celdas
-                for fila in hoja.iter_rows(min_row=2):
-                    for celda in fila:
-                        celda.alignment = Alignment(horizontal="center", vertical="center")
+            # Ajustar el ancho de las columnas
+            for columna in hoja.columns:
+                max_length = 0
+                column = columna[0].column_letter  # Obtiene la letra de la columna (A, B, C, ...)
+                for cell in columna:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2) * 1.2
+                hoja.column_dimensions[column].width = adjusted_width
 
-                libro_excel.save(ruta_archivo)
-                messagebox.showinfo("Exportar a Excel", f"Los datos se han exportado correctamente al archivo:\n\n{ruta_archivo}")
+            # Centrar el contenido de las celdas
+            for fila in hoja.iter_rows(min_row=2):
+                for celda in fila:
+                    celda.alignment = Alignment(horizontal="center", vertical="center")
+
+            libro_excel.save(ruta_archivo)
+            messagebox.showinfo("Exportar a Excel", f"Los datos se han exportado correctamente al archivo:\n\n{ruta_archivo}")
 
     def enviar_correo(self):
         datos_json = self.convertir_a_json()
@@ -329,5 +342,5 @@ def main_estudiante(ventana_login, datos):
     ventana_login.destroy()
     ventana_main = tk.Tk()
     ventana_main.resizable(width=False, height=False)
-    app = VentanaNotas(ventana_login,ventana_main, datos)
+    app = VentanaNotas(ventana_main, datos)
     ventana_main.mainloop()
