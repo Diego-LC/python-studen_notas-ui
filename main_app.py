@@ -6,6 +6,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment
 from flask import jsonify
 import requests
+import datetime
 
 class VentanaNotas:
     def __init__(self, ventana, datos):
@@ -15,6 +16,7 @@ class VentanaNotas:
         self.tipo_evaluacion = []
         self.seleccion = ""
         self.datos = datos['notas']
+        self.api = "http://52.45.92.192:8081/"
 
         lbl_mensaje = tk.Label(ventana, text="Selecciona una fila para editarla", font=("Arial", 10), fg="blue")
         lbl_mensaje.grid(row=0, column=0, sticky="w", pady=(10, 0))
@@ -266,7 +268,7 @@ class VentanaNotas:
 
     def subir_servidor(self):
         datos_json = {'userid': self.usuario, 'notas': self.datos}
-        api_url = 'http://52.45.92.192:8081/update'
+        api_url = self.api + 'update'
         try:
             response = requests.post(api_url, json=datos_json)
             print(response)
@@ -278,8 +280,6 @@ class VentanaNotas:
             messagebox.showinfo("Subir al Servidor", respuesta['mensaje'])
         else:
             messagebox.showerror("Error", "Ha ocurrido un error al subir los datos al servidor.")
-        #
-        print(datos_json)
 
     def convertir_a_json(self):
         datos_json = {}
@@ -295,48 +295,59 @@ class VentanaNotas:
         return datos_json
 
     def exportar_excel(self):
-        datos_json = self.convertir_a_json()
-        print(datos_json)
-        ruta_archivo = asksaveasfilename(defaultextension=".xlsx", filetypes=(("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")))
+        libro_excel = Workbook()
+        hoja = libro_excel.active
+
+        # Encabezados de columna
+        hoja.append(["Tipo de Nota", "Nota", "Ponderación Nota", "Tipo de Evaluación", "Ponderación Evaluación"])
+
+        # Datos de la tabla
+        for item_id in self.tabla.get_children():
+            fila = self.tabla.item(item_id)["values"]
+            hoja.append(fila)
+            print(fila)
+
+        # Ajustar el ancho de las columnas
+        for columna in hoja.columns:
+            max_length = 0
+            column = columna[0].column_letter  # Obtiene la letra de la columna (A, B, C, ...)
+            for cell in columna:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            hoja.column_dimensions[column].width = adjusted_width
+
+        # Centrar el contenido de las celdas
+        for fila in hoja.iter_rows(min_row=2):
+            for celda in fila:
+                celda.alignment = Alignment(horizontal="center", vertical="center")
+        
+        #Se pregunta por la ruta y nombre donde se guardará el archivo
+        hoy = datetime.now()
+        hoy_str = hoy.strftime("%d-%m-%Y %H:%M:%S")
+        ruta_archivo = asksaveasfilename(defaultextension=".xlsx", filetypes=(("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")), initialfile=f"Notas{hoy_str}")
+        
         if ruta_archivo:
-            libro_excel = Workbook()
-            hoja = libro_excel.active
-
-            # Encabezados de columna
-            hoja.append(["Tipo de Nota", "Nota", "Ponderación Nota", "Tipo de Evaluación", "Ponderación Evaluación"])
-
-            # Datos de la tabla
-            for item_id in self.tabla.get_children():
-                fila = self.tabla.item(item_id)["values"]
-                hoja.append(fila)
-
-
-            # Ajustar el ancho de las columnas
-            for columna in hoja.columns:
-                max_length = 0
-                column = columna[0].column_letter  # Obtiene la letra de la columna (A, B, C, ...)
-                for cell in columna:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(cell.value)
-                    except:
-                        pass
-                adjusted_width = (max_length + 2) * 1.2
-                hoja.column_dimensions[column].width = adjusted_width
-
-            # Centrar el contenido de las celdas
-            for fila in hoja.iter_rows(min_row=2):
-                for celda in fila:
-                    celda.alignment = Alignment(horizontal="center", vertical="center")
-
             libro_excel.save(ruta_archivo)
             messagebox.showinfo("Exportar a Excel", f"Los datos se han exportado correctamente al archivo:\n\n{ruta_archivo}")
 
     def enviar_correo(self):
-        datos_json = self.convertir_a_json()
+        print(self.datos[0])
+        datos_json = {'userid': self.usuario, 'notas': self.convertir_a_json()}
+        datos_json.update(self.datos[0])
+        datos_json['promedios'] = self.promedio_evaluaciones
+        datos_json['promedio_total'] = self.promedio_total
+        api_url = self.api + 'send'
+        try:
+            response = requests.post(api_url, json=datos_json)
+            print(response)
+            messagebox.showinfo("Enviar por Correo", response.json()['mensaje'])
+        except:
+            print("Ha ocurrido un error al enviar los datos por correo.")
         print(datos_json)
-        # Aquí puedes implementar la lógica para enviar los datos por correo utilizando el formato JSON
-        messagebox.showinfo("Enviar por Correo", "Los datos se han enviado correctamente por correo.")
 
 def main_estudiante(ventana_login, datos):
     ventana_login.destroy()
