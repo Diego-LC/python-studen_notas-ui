@@ -7,20 +7,25 @@ from openpyxl.styles import Alignment
 from flask import jsonify
 
 class VentanaNotas:
-    def __init__(self, ventana, datos):
+    def __init__(self,ventana_login, ventana, datos):
+        self.usuario = datos['userid']
+        self.ventana_login = ventana_login
         self.ventana = ventana
         self.ventana.title("Tabla de Notas")
         self.tipo_evaluacion = []
         self.seleccion = ""
-        self.datos = datos
+        self.datos = datos['notas']
+
+        lbl_mensaje = tk.Label(ventana, text="Selecciona una fila para editarla", font=("Arial", 10), fg="blue")
+        lbl_mensaje.grid(row=0, column=0, sticky="w", pady=(10, 0))
 
         self.frame_tabla = ttk.Frame(ventana)
-        self.frame_tabla.grid(row=0, column=0, sticky="nswe")
+        self.frame_tabla.grid(row=1, column=0, sticky="nswe")
         self.frame_tabla.columnconfigure(0, weight=1)
         self.frame_tabla.rowconfigure(0, weight=4)
 
         self.tabla = ttk.Treeview(self.frame_tabla, columns=("Tipo Nota", "Nota", "Ponderación Nota", "Tipo Evaluación", "Ponderación Evaluación"))
-        self.tabla.pack(side=tk.LEFT)
+        self.tabla.grid(row=1, column=0, sticky="nswe")
         self.tabla.column("#0", width=0, stretch=tk.NO)
         self.tabla.column("Tipo Nota", anchor=tk.CENTER, width=100)
         self.tabla.column("Nota", anchor=tk.CENTER, width=100)
@@ -39,10 +44,17 @@ class VentanaNotas:
         self.cargar_datos() # Cargar los datos de la tabla
         
         btn_agregar = tk.Button(ventana, text="Agregar Nota", command=self.agregar_nota)
-        btn_agregar.grid(row=3, column=0)
+        btn_agregar.grid(row=4, column=0)
 
         btn_opciones = tk.Button(ventana, text="Opciones", command=self.mostrar_opciones)
-        btn_opciones.grid(row=4, column=0, sticky="s")
+        btn_opciones.grid(row=5, column=0, sticky="s")
+        
+        btn_cerrar_sesion = tk.Button(ventana, text="Cerrar Sesión", command=self.cerrar_sesion)
+        btn_cerrar_sesion.grid(row=6, column=0, sticky="s", pady=(30,2))
+
+    def cerrar_sesion(self):
+        self.ventana.destroy()
+        from inicio import root
     
     def cargar_datos(self):
         nueva_lista = []
@@ -70,11 +82,10 @@ class VentanaNotas:
             for evaluacion, promedio in self.promedio_evaluaciones.items():
                 mensaje += f"{evaluacion}: {promedio}\n"
             lbl_promedio_evaluaciones = tk.Label(self.ventana, text=mensaje)
-            lbl_promedio_evaluaciones.grid(row=1, column=0, sticky="wn")
+            lbl_promedio_evaluaciones.grid(row=2, column=0, sticky="wn")
             lbl_promedio_total = tk.Label(self.ventana, text=f"Promedio Total: {self.promedio_total}")
-            lbl_promedio_total.grid(row=2, column=0, sticky="ws")
+            lbl_promedio_total.grid(row=3, column=0, sticky="ws")
             print(self.promedio_evaluaciones)
-            #lbl_promedio_evaluaciones.update()
 
     
     def editar_fila(self, event):
@@ -107,14 +118,12 @@ class VentanaNotas:
 
         lbl_tipo_evaluacion = tk.Label(ventana_editar, text="Tipo de Evaluación:")
         lbl_tipo_evaluacion.pack()
-        self.seleccion = valores[3]
-        print("Sin seleccionar", self.seleccion)
+        self.seleccion = valores[3] # Valor por defecto del combobox
         def on_selection(event):
-            self.seleccion = combobox.get()
-            print("Seleccionado item:", self.seleccion)
+            self.seleccion = combobox.get() # Seleccionar el valor del combobox
         combobox = ttk.Combobox(ventana_editar, textvariable=tk.StringVar(), values=self.tipo_evaluacion)
-        combobox.current(self.tipo_evaluacion.index(valores[3]))
-        combobox.bind('<<ComboboxSelected>>', lambda event: on_selection(event))
+        combobox.current(self.tipo_evaluacion.index(valores[3])) # Seleccionar el valor por defecto del combobox
+        combobox.bind('<<ComboboxSelected>>', lambda event: on_selection(event)) # Evento para seleccionar un valor del combobox
         combobox.pack(pady=5)
 
         lbl_ponderacion_evaluacion = tk.Label(ventana_editar, text="Ponderación Evaluación:")
@@ -151,7 +160,23 @@ class VentanaNotas:
         ventana_editar.destroy()
 
     def eliminar_fila(self, item_id, ventana_editar):
-        self.tabla.delete(item_id)
+        num_fila = self.tabla.index(item_id)
+        if self.datos[1]['notas'][num_fila]:
+            tipo_nota = self.datos[1]['notas'][num_fila][0]
+            tipo_eval = self.datos[1]['notas'][num_fila][2]
+            notnota = True
+            noteval = True
+            for fila in self.datos[1]['notas']:
+                if tipo_nota in fila:
+                    notnota = False
+                if tipo_eval in fila:
+                    noteval = False
+            if notnota:
+                del self.datos[0]['ponderaciones']['tipo_evaluacion'][tipo_eval]
+            if noteval:
+                del self.datos[0]['ponderaciones']['tipo_nota'][tipo_nota]
+            del self.datos[1]['notas'][num_fila]
+        self.cargar_datos()
         ventana_editar.destroy()
 
     def agregar_nota(self):
@@ -209,9 +234,11 @@ class VentanaNotas:
             ponderacion_nota = float(self.datos[0]['ponderaciones']['tipo_nota'][tipo_nota]) 
             tipo_eval = notas[2]
             if tipo_eval not in promedios_tipo_evaluacion.keys():
-                promedios_tipo_evaluacion[tipo_eval] = round(float(notas[1]) * ponderacion_nota, 2)
+                promedios_tipo_evaluacion[tipo_eval] = (float(notas[1]) * ponderacion_nota)
+                promedios_tipo_evaluacion[tipo_eval] = round(promedios_tipo_evaluacion[tipo_eval], 2)
             else:
-                promedios_tipo_evaluacion[tipo_eval] += round(float(notas[1]) * ponderacion_nota, 2)
+                promedios_tipo_evaluacion[tipo_eval] += (float(notas[1]) * ponderacion_nota)
+                promedios_tipo_evaluacion[tipo_eval] = round(promedios_tipo_evaluacion[tipo_eval], 2)
             """ if tipo_nota not in promedios_nota.keys():
                 promedios_nota[tipo_nota] = (float(notas[1]) * ponderacion_nota)
             else:
@@ -246,15 +273,14 @@ class VentanaNotas:
     def convertir_a_json(self):
         datos_json = {}
         index = 1
-        for fila in self.datos:
-            datos_json['fila' + str(index)] ={
-                "Tipo Nota": fila[0],
-                "Nota": fila[1],
-                "Ponderación Nota": fila[2],
-                "Tipo Evaluación": fila[3],
-                "Ponderación Evaluación": fila[4]
-            }
-            index += 1
+        if self.datos[1]['notas']:
+            for fila in self.datos[1]['notas']:
+                datos_json['fila' + str(index)] ={
+                    "Tipo Nota": fila[0],
+                    "Nota": fila[1],
+                    "Tipo Evaluación": fila[2]
+                }
+                index += 1
         return datos_json
 
     def exportar_excel(self):
@@ -299,9 +325,9 @@ class VentanaNotas:
         # Aquí puedes implementar la lógica para enviar los datos por correo utilizando el formato JSON
         messagebox.showinfo("Enviar por Correo", "Los datos se han enviado correctamente por correo.")
 
-def main_estudiante(ventana, datos):
-    ventana.destroy()
+def main_estudiante(ventana_login, datos):
+    ventana_login.destroy()
     ventana_main = tk.Tk()
     ventana_main.resizable(width=False, height=False)
-    app = VentanaNotas(ventana_main, datos)
+    app = VentanaNotas(ventana_login,ventana_main, datos)
     ventana_main.mainloop()

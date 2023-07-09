@@ -2,7 +2,6 @@ import requests
 import tkinter as tk
 import main_app
 from registro import registro as rgstr
-import asyncio
 
 api = "http://52.45.92.192:8081/"
 def login():
@@ -11,6 +10,10 @@ def login():
     # Verificar las credenciales del usuario
     url = api + "login" # Dirección URL de tu API Flask aquí
     params = {"username": user,"password": password}
+    datos_admin={'userid': 1, 'notas': [{'ponderaciones':{'tipo_evaluacion':{'Eval. Teórica':1.0}, 
+                                                                    'tipo_nota':{'Prueba':0.6, 'Control':0.4}}},
+                                            {'notas':[["Control", "5.5", "Eval. Teórica"],
+                                                        ["Prueba", "6.0", "Eval. Teórica"]]}]}
     try:
         response = requests.post(url, json=params)
     except:
@@ -18,7 +21,7 @@ def login():
         # Error al conectarse a la API
         lbl_message.config(text="Error al conectarse a la API", fg="red")
         if user == "admin" or password == "admin":
-            main_app.main_estudiante(root, [])
+            main_app.main_estudiante(root, datos_admin)
         return
 
     if response.ok:
@@ -26,17 +29,17 @@ def login():
         if respuesta['token']:
             # Usuario registrado
             print("Token de autenticación recibido:", respuesta['token'])
-            main_app.main_estudiante(root, respuesta['notas'])
+            main_app.main_estudiante(root, respuesta)
         else:
-            print("Error al recibir el token de autenticación")
+            print("Error al iniciar sesión")
             print(respuesta)
             # Usuario no registrado
-            lbl_message.config(text="Usuario no registrado", fg="red")
+            lbl_message.config(text=respuesta['mensaje'], fg="red")
     else:
         print("Error al recibir la respuesta de la API")
         lbl_message.config(text="Error al recibir la respuesta de la API", fg="red")
     if user == "admin" or password == "admin":
-        main_app.main_estudiante(root, [])
+        main_app.main_estudiante(root, datos_admin)
 
 def recover_password():
     # Cerrar la ventana de inicio de sesión
@@ -63,7 +66,7 @@ def recover_password():
             notificacion.title("Notificación")
             notificacion.geometry("100x60")
 
-            lbl_notificacion = tk.Label(notificacion, text="Se ha enviado un correo de recuperación")
+            lbl_notificacion = tk.Label(notificacion, text=response.json()['mensaje'])
             lbl_notificacion.pack()
             # Cerrar la ventana de recuperación de contraseña
             lbl_button = tk.Button(notificacion, text="Aceptar", command=recover_window.destroy)
@@ -80,6 +83,9 @@ def recover_password():
     
     btn_submit = tk.Button(recover_window, text="Enviar", command=submit_email)
     btn_submit.pack(pady=10)
+
+    btn_volver = tk.Button(recover_window, text="Volver", command=lambda: (recover_window.destroy(), root.deiconify()))
+    btn_volver.pack(pady=(50,0))
 
 def register():
     rgstr(root)
