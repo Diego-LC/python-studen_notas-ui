@@ -1,7 +1,7 @@
 import requests
 import tkinter as tk
 import main_app
-from registro import registro as rgstr
+from registro import registro
 
 api = "http://52.45.92.192:8081/"
 def login():
@@ -88,9 +88,6 @@ def recover_password():
     btn_volver = tk.Button(recover_window, text="Volver", command=lambda: (recover_window.destroy(), root.deiconify()))
     btn_volver.pack(pady=(50,0))
 
-def register():
-    rgstr(root)
-
 # Crear la ventana principal
 root = tk.Tk()
 root.title("Inicio de Sesión")
@@ -116,7 +113,7 @@ lbl_message = tk.Label(root, text="")
 lbl_message.pack()
 
 # Botón de registro (inicialmente oculto)
-btn_register = tk.Button(root, text="Registrarse", command=register)
+btn_register = tk.Button(root, text="Registrarse", command=lambda: registro(root))
 btn_register.pack(side=tk.TOP, pady=10)
 
 # Botón de recuperar contraseña
