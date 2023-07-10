@@ -53,10 +53,6 @@ class VentanaNotas:
         
         btn_cerrar_sesion = tk.Button(ventana, text="Cerrar Sesión", command=self.cerrar_sesion)
         btn_cerrar_sesion.grid(row=6, column=0, sticky="s", pady=(30,2))
-
-    def cerrar_sesion(self):
-        self.ventana.destroy()
-        from inicio import root
     
     def cargar_datos(self):
         nueva_lista = []
@@ -87,8 +83,33 @@ class VentanaNotas:
             lbl_promedio_evaluaciones.grid(row=2, column=0, sticky="wn")
             lbl_promedio_total = tk.Label(self.ventana, text=f"Promedio Total: {self.promedio_total}")
             lbl_promedio_total.grid(row=3, column=0, sticky="ws")
-
     
+    def calcular_promedios(self):
+        promedios_tipo_evaluacion = {}
+        #promedios_nota = {}
+        promedio_total = 0.0
+        
+        for notas in self.datos[1]['notas']:
+            tipo_nota = notas[0]
+            ponderacion_nota = float(self.datos[0]['ponderaciones']['tipo_nota'][tipo_nota]) 
+            tipo_eval = notas[2]
+            if tipo_eval not in promedios_tipo_evaluacion.keys():
+                promedios_tipo_evaluacion[tipo_eval] = (float(notas[1]) * ponderacion_nota)
+                promedios_tipo_evaluacion[tipo_eval] = round(promedios_tipo_evaluacion[tipo_eval], 2)
+            else:
+                promedios_tipo_evaluacion[tipo_eval] += (float(notas[1]) * ponderacion_nota)
+                promedios_tipo_evaluacion[tipo_eval] = round(promedios_tipo_evaluacion[tipo_eval], 2)
+            """ if tipo_nota not in promedios_nota.keys():
+                promedios_nota[tipo_nota] = (float(notas[1]) * ponderacion_nota)
+            else:
+                promedios_nota[tipo_nota] += (float(notas[1]) * ponderacion_nota) """
+        
+        for  ponderacion, promedio in promedios_tipo_evaluacion.items():
+            ponderacion_evaluacion = float(self.datos[0]['ponderaciones']['tipo_evaluacion'][ponderacion])
+            promedio_total += promedio * ponderacion_evaluacion
+
+        return promedios_tipo_evaluacion, round(promedio_total, 2)
+
     def editar_fila(self, event):
         item_id = self.tabla.identify_row(event.y)
         num_fila = self.tabla.index(item_id)
@@ -225,33 +246,6 @@ class VentanaNotas:
         self.cargar_datos()
         ventana_agregar.destroy()
 
-    def calcular_promedios(self):
-        promedios_tipo_evaluacion = {}
-        #promedios_nota = {}
-        promedio_total = 0.0
-        
-        for notas in self.datos[1]['notas']:
-            tipo_nota = notas[0]
-            ponderacion_nota = float(self.datos[0]['ponderaciones']['tipo_nota'][tipo_nota]) 
-            tipo_eval = notas[2]
-            if tipo_eval not in promedios_tipo_evaluacion.keys():
-                promedios_tipo_evaluacion[tipo_eval] = (float(notas[1]) * ponderacion_nota)
-                promedios_tipo_evaluacion[tipo_eval] = round(promedios_tipo_evaluacion[tipo_eval], 2)
-            else:
-                promedios_tipo_evaluacion[tipo_eval] += (float(notas[1]) * ponderacion_nota)
-                promedios_tipo_evaluacion[tipo_eval] = round(promedios_tipo_evaluacion[tipo_eval], 2)
-            """ if tipo_nota not in promedios_nota.keys():
-                promedios_nota[tipo_nota] = (float(notas[1]) * ponderacion_nota)
-            else:
-                promedios_nota[tipo_nota] += (float(notas[1]) * ponderacion_nota) """
-        
-        for  ponderacion, promedio in promedios_tipo_evaluacion.items():
-            ponderacion_evaluacion = float(self.datos[0]['ponderaciones']['tipo_evaluacion'][ponderacion])
-            promedio_total += promedio * ponderacion_evaluacion
-
-        return promedios_tipo_evaluacion, round(promedio_total, 2)
-        messagebox.showinfo("Promedios", f"Promedios por Tipo de Evaluación:\n\n{promedios_tipo_evaluacion}\n\nPromedios por Tipo de Nota:\n\n{promedios_nota}\n\nPromedio Total: {promedio_total:.2f}")
-
     def mostrar_opciones(self):
         self.ventana.withdraw()
         ventana_opciones = tk.Toplevel(self.ventana)
@@ -380,6 +374,10 @@ class VentanaNotas:
             messagebox.showinfo("Enviar por Correo", response.json()['mensaje'])
         except:
             messagebox.showinfo("Enviar por Correo", "Ha ocurrido un error al enviar los datos por correo")
+
+    def cerrar_sesion(self):
+        self.ventana.destroy()
+        from inicio import root
 
 def main_estudiante(ventana_login, datos):
     ventana_login.destroy()
