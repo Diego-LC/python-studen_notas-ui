@@ -2,7 +2,7 @@ import tkinter as tk
 import requests
 
 api = "http://52.45.92.192:8081/"
-def registro(root):
+def ventana_registro(root):
     # Cerrar la ventana de inicio de sesión
     root.withdraw()
     
